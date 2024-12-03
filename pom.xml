@@ -32,9 +32,13 @@
     </dependencyManagement>
 
     <dependencies>
+    	<dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-oidc</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-rest</artifactId>
+            <artifactId>quarkus-rest-client-oidc-token-propagation</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>

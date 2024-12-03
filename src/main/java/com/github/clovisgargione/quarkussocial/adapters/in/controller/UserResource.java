@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.jboss.resteasy.reactive.RestResponse.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +23,10 @@ import com.github.clovisgargione.quarkussocial.application.ports.in.InsertUserIn
 import com.github.clovisgargione.quarkussocial.application.ports.in.ListUserInputPort;
 import com.github.clovisgargione.quarkussocial.application.ports.in.UpdateUserInputPort;
 
+import io.quarkus.security.Authenticated;
 import io.vertx.core.http.HttpServerRequest;
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
@@ -36,6 +40,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 
 @Path("users")
+@Authenticated
 public class UserResource {
 
 	private static final Logger logger = LoggerFactory.getLogger(UserResource.class);
@@ -54,12 +59,11 @@ public class UserResource {
 	
 	private Validator validator;
 	
-	@Context
-    HttpServerRequest serverRequest;
-
+	private JsonWebToken jsonWebToken;
+	
 	@Inject
 	public UserResource(InsertUserInputPort insertUserInputPort, ListUserInputPort listUserInputPort,
-			DeleteUserInputPort deleteUserInputPort, UpdateUserInputPort updateUserInputPort, FindByIdUserInputPort findByIdUserInputPort, UserMapper userMapper, Validator validator) {
+			DeleteUserInputPort deleteUserInputPort, UpdateUserInputPort updateUserInputPort, FindByIdUserInputPort findByIdUserInputPort, UserMapper userMapper, Validator validator, JsonWebToken jsonWebToken) {
 		super();
 		this.insertUserInputPort = insertUserInputPort;
 		this.listUserInputPort = listUserInputPort;
@@ -68,9 +72,11 @@ public class UserResource {
 		this.findByIdUserInputPort = findByIdUserInputPort;
 		this.userMapper = userMapper;
 		this.validator = validator;
+		this.jsonWebToken = jsonWebToken;
 	}
 
 	@POST
+	@RolesAllowed({"admin"})
 	public Response createUser(UserRequest userRequest) {
 		Set<ConstraintViolation<UserRequest>> violations = validator.validate(userRequest);
 		if(!violations.isEmpty()) {
@@ -83,6 +89,7 @@ public class UserResource {
 	}
 
 	@GET
+	@RolesAllowed({"user"})
 	public Response listAllUsers() {
 		List<User> users = listUserInputPort.listUsers();
 		List<UserResponse> response = users.stream().map(u -> userMapper.toUserResponse(u))
@@ -92,6 +99,7 @@ public class UserResource {
 
 	@DELETE
 	@Path("{id}")
+	@RolesAllowed({"admin"})
 	public Response deleteUser(@PathParam("id") Long id) {
 		try {
 			deleteUserInputPort.delete(id);
@@ -104,6 +112,7 @@ public class UserResource {
 
 	@PUT
 	@Path("{id}")
+	@RolesAllowed({"admin"})
 	public Response updateUser(@PathParam("id") Long id, UserRequest userRequest) {
 		Set<ConstraintViolation<UserRequest>> violations = validator.validate(userRequest);
 		if(!violations.isEmpty()) {
@@ -122,6 +131,7 @@ public class UserResource {
 	
 	@GET
 	@Path("{id}")
+	@RolesAllowed({"user"})
 	public Response findByIdUser(@PathParam("id") Long id) {
 		try {
 			User user = findByIdUserInputPort.findById(id);
@@ -135,7 +145,8 @@ public class UserResource {
 	
 	@GET
 	@Path("host")
-	public Response getHost() throws UnknownHostException {
+	@PermitAll
+	public Response getHost(@Context HttpServerRequest serverRequest) throws UnknownHostException {
 		
 		String hostAndPort = InetAddress.getLocalHost().getHostName() + ":" + serverRequest.localAddress().port();
 		return Response.ok(hostAndPort).build();
