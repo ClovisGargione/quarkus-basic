@@ -25,7 +25,6 @@ import com.github.clovisgargione.quarkussocial.application.ports.in.UpdateUserIn
 
 import io.quarkus.security.Authenticated;
 import io.vertx.core.http.HttpServerRequest;
-import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.ConstraintViolation;
@@ -140,12 +139,12 @@ public class UserResource {
 		} catch (UserException e) {
 			logger.error(e.getMessage());
 		}
-		return Response.status(Status.NOT_FOUND).build();
+		return Response.status(Status.NOT_FOUND).entity("Usuário não encontrado").build();
 	}
 	
 	@GET
 	@Path("host")
-	@PermitAll
+	@RolesAllowed({"user"})
 	public Response getHost(@Context HttpServerRequest serverRequest) throws UnknownHostException {
 		
 		String hostAndPort = InetAddress.getLocalHost().getHostName() + ":" + serverRequest.localAddress().port();

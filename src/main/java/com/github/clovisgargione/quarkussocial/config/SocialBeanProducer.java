@@ -12,7 +12,7 @@ import jakarta.enterprise.inject.Produces;
 @ApplicationScoped
 public class SocialBeanProducer {
 
-	@ConfigProperty(name = "consul.host", defaultValue = "192.168.99.100")
+	@ConfigProperty(name = "consul.host", defaultValue = "localhost")
 	String host;
 	@ConfigProperty(name = "consul.port", defaultValue = "8500")
 	int port;
